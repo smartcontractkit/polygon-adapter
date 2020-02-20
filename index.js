@@ -45,6 +45,7 @@ const createRequest = (input, callback) => {
 
   const queryObj = {
     amount: '1',
+    precision: '4',
     apikey: process.env.API_KEY
   }
 
