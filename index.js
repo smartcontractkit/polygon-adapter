@@ -68,6 +68,7 @@ const createRequest = (input, callback) => {
       })
     })
     .catch(error => {
+      if (!error.statusCode) error.statusCode = 503
       callback(error.statusCode, {
         jobRunID: input.id,
         status: 'errored',
