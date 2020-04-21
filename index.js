@@ -1,18 +1,12 @@
 const {Requester, Validator} = require('external-adapter')
 
-// Define custom error scenarios for the API.
-// Return true for the adapter to retry.
 const customError = (body) => {
   return body.status === 'ERROR'
 }
 
-// Define custom parameters to be used by the adapter.
-// Extra parameters can be stated in the extra object,
-// with a Boolean value indicating whether or not they
-// should be required.
 const customParams = {
-  base: ['base', 'from', 'coin', 'fsym'],
-  quote: ['quote', 'to', 'market', 'tsyms'],
+  base: ['base', 'from'],
+  quote: ['quote', 'to'],
   endpoint: false,
   amount: false,
   precision: false
