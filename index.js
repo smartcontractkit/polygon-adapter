@@ -1,4 +1,4 @@
-const {Requester, Validator} = require('external-adapter')
+const { Requester, Validator } = require('external-adapter')
 
 const customError = (body) => {
   return body.status === 'ERROR'
@@ -35,13 +35,13 @@ const createRequest = (input, callback) => {
   }
 
   Requester.requestRetry(options, customError)
-      .then(response => {
-        response.body.result = Requester.validateResult(response.body, ["converted"])
-        callback(response.statusCode, Requester.success(jobRunID, response))
-      })
-      .catch(error => {
-        callback(500, Requester.errored(jobRunID, error))
-      })
+    .then(response => {
+      response.body.result = Requester.validateResult(response.body, ['converted'])
+      callback(response.statusCode, Requester.success(jobRunID, response))
+    })
+    .catch(error => {
+      callback(500, Requester.errored(jobRunID, error))
+    })
 }
 
 exports.gcpservice = (req, res) => {
