@@ -1,80 +1,46 @@
-const rp = require('request-promise')
-const retries = process.env.RETRIES || 3
-const delay = process.env.RETRY_DELAY || 1000
-const timeout = process.env.TIMEOUT || 1000
+const { Requester, Validator } = require('external-adapter')
 
-const requestRetry = (options, retries) => {
-  return new Promise((resolve, reject) => {
-    const retry = (options, n) => {
-      return rp(options)
-        .then(response => {
-          if (response.body.error) {
-            if (n === 1) {
-              reject(response)
-            } else {
-              setTimeout(() => {
-                retries--
-                retry(options, retries)
-              }, delay)
-            }
-          } else {
-            return resolve(response)
-          }
-        })
-        .catch(error => {
-          if (n === 1) {
-            reject(error)
-          } else {
-            setTimeout(() => {
-              retries--
-              retry(options, retries)
-            }, delay)
-          }
-        })
-    }
-    return retry(options, retries)
-  })
+const customError = (body) => {
+  return body.status === 'ERROR'
+}
+
+const customParams = {
+  base: ['base', 'from'],
+  quote: ['quote', 'to'],
+  endpoint: false,
+  amount: false,
+  precision: false
 }
 
 const createRequest = (input, callback) => {
-  let url = 'https://api.polygon.io/v1/'
-  const endpoint = input.data.endpoint || 'conversion'
-  const from = input.data.from || 'EUR'
-  const to = input.data.to || 'USD'
-  url = url + endpoint + '/' + from + '/' + to
+  const validator = new Validator(input, customParams, callback)
+  const jobRunID = validator.validated.id
+  const endpoint = validator.validated.data.endpoint || 'conversion'
+  const from = validator.validated.data.base.toUpperCase()
+  const to = validator.validated.data.quote.toUpperCase()
+  const url = `https://api.polygon.io/v1/${endpoint}/${from}/${to}`
+  const amount = validator.validated.data.amount || 1
+  const precision = validator.validated.data.precision || 4
+  const apikey = process.env.API_KEY
 
-  const queryObj = {
-    amount: '1',
-    precision: '4',
-    apikey: process.env.API_KEY
+  const qs = {
+    amount,
+    precision,
+    apikey
   }
 
   const options = {
-    url: url,
-    qs: queryObj,
-    json: true,
-    timeout,
-    resolveWithFullResponse: true
+    url,
+    qs
   }
-  requestRetry(options, retries)
+
+  Requester.requestRetry(options, customError)
     .then(response => {
-      const result = response.body.converted
-      response.body.result = result
-      callback(response.statusCode, {
-        jobRunID: input.id,
-        data: response.body,
-        result,
-        statusCode: response.statusCode
-      })
+      response.body.result = Requester.validateResult(response.body, ['converted'])
+      callback(response.statusCode, Requester.success(jobRunID, response))
     })
     .catch(error => {
-      if (!error.statusCode) error.statusCode = 503
-      callback(error.statusCode, {
-        jobRunID: input.id,
-        status: 'errored',
-        error,
-        statusCode: error.statusCode
-      })
+      callback(500, Requester.errored(jobRunID, error))
     })
 }
 
