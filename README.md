@@ -1,6 +1,6 @@
 # Chainlink Polygon External Adapter
 
-This adapter is for [Polygon.io](https://polygon.io/) and supports the conversion endpoint.
+**This adapter has moved to our [external adapters monorepo](https://github.com/smartcontractkit/external-adapters-js)!**
 
 ## Input params
 
